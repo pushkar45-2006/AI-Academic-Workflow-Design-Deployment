@@ -1,0 +1,34 @@
+# =============================================================================
+# Academic AI Workflow Assistant - Python Dependencies
+# =============================================================================
+
+# --- Core Framework ---
+streamlit>=1.35.0
+
+# --- LLM & Orchestration ---
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-community>=0.2.0
+langchain-anthropic>=0.1.15
+langchain-openai>=0.1.8
+
+# --- LLM Providers ---
+anthropic>=0.28.0
+openai>=1.30.0
+
+# --- PDF Processing ---
+pymupdf>=1.24.0          # fitz — robust, fast PDF extraction
+pdfplumber>=0.11.0       # fallback, great for tables
+pypdf2>=3.0.1            # lightweight utility
+
+# --- Search ---
+tavily-python>=0.3.3
+google-search-results>=2.4.2   # SerpAPI client
+
+# --- Utilities ---
+python-dotenv>=1.0.1
+tiktoken>=0.7.0          # token counting
+tenacity>=8.3.0          # retry logic
+
+# --- Data Handling ---
+pandas>=2.2.0
