@@ -5,9 +5,9 @@ Academic AI Workflow logic supporting Google Gemini (Free Tier),
 Anthropic, and OpenAI.
 
 Workflows:
-  1. get_llm()              — Factory for AI model initialization
-  2. grade_assignment()     — Assignment Correction System
-  3. summarise_paper()      — Research Paper Summariser (map-reduce)
+  1. get_llm()           — Factory for AI model initialization (Secure Version)
+  2. grade_assignment()  — Assignment Correction System
+  3. summarise_paper()   — Research Paper Summariser (map-reduce)
 """
 
 from __future__ import annotations
@@ -29,20 +29,31 @@ logger = logging.getLogger(__name__)
 # LLM Factory
 # ---------------------------------------------------------------------------
 
-def get_llm(config: AppConfig) -> BaseChatModel:
+def get_llm(config: AppConfig) -> Optional[BaseChatModel]:
     """
     Return a configured LangChain chat model based on the provider in config.
-    Supports 'gemini' (Free Tier), 'anthropic', and 'openai'.
+    Prioritizes user-provided keys from the UI to prevent leakage.
     """
     if config.llm_provider == "gemini":
+        # Pull key from the config object (set by the sidebar in app.py)
+        # Fallback to the environment only if absolutely necessary
+        api_key = getattr(config, 'google_api_key', None) or os.getenv("GOOGLE_API_KEY")
+        
+        if not api_key:
+            logger.warning("No Google API key provided. LLM initialization aborted.")
+            return None
+            
         from langchain_google_genai import ChatGoogleGenerativeAI
-        # Accessing key from environment directly for the free tier
-        api_key = os.getenv("GOOGLE_API_KEY")
-        return ChatGoogleGenerativeAI(
-            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
-            google_api_key=api_key,
-            temperature=0.3,
-        )
+        
+        try:
+            return ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash", # Highly stable, fast model for document analysis
+                google_api_key=api_key,
+                temperature=0.3,
+            )
+        except Exception as e:
+            logger.error(f"Error initializing Gemini: {e}")
+            return None
 
     if config.llm_provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
@@ -69,8 +80,11 @@ def get_llm(config: AppConfig) -> BaseChatModel:
 # Helper: run a single prompt
 # ---------------------------------------------------------------------------
 
-def _invoke_llm(llm: BaseChatModel, system: str, human: str) -> str:
+def _invoke_llm(llm: Optional[BaseChatModel], system: str, human: str) -> str:
     """Simple wrapper: system + human → string response."""
+    if not llm:
+        return "Error: AI model not initialized. Please provide a valid API key in the sidebar."
+        
     prompt = ChatPromptTemplate.from_messages([
         ("system", system),
         ("human", "{input}"),
@@ -175,6 +189,9 @@ def summarise_paper(
     Map phase:  Each chunk is independently summarised.
     Reduce phase: All partial summaries are merged into a final structured report.
     """
+    if not llm:
+         return "Summarisation failed: AI model is not ready. Have you provided an API key?"
+
     chunks = chunk_text(paper_text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     logger.info("Summarising paper in %d chunks (map phase)...", len(chunks))
 
