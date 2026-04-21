@@ -9,10 +9,12 @@ streamlit>=1.35.0
 langchain>=0.2.0
 langchain-core>=0.2.0
 langchain-community>=0.2.0
+langchain-google-genai>=0.1.0  # <--- CRITICAL: Fixes your current error
 langchain-anthropic>=0.1.15
 langchain-openai>=0.1.8
 
 # --- LLM Providers ---
+google-generativeai>=0.5.0     # <--- Required for Gemini 1.5/2.0
 anthropic>=0.28.0
 openai>=1.30.0
 
@@ -23,7 +25,7 @@ pypdf2>=3.0.1            # lightweight utility
 
 # --- Search ---
 tavily-python>=0.3.3
-google-search-results>=2.4.2   # SerpAPI client
+google-search-results>=2.4.2
 
 # --- Utilities ---
 python-dotenv>=1.0.1
