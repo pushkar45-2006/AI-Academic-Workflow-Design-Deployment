@@ -14,6 +14,7 @@ Run with:
 
 import logging
 import sys
+import os
 
 import streamlit as st
 
@@ -185,16 +186,6 @@ hr { border-color: var(--border) !important; }
 </style>
 """, unsafe_allow_html=True)
 
-
-# ---------------------------------------------------------------------------
-# Session-state initialisation
-# ---------------------------------------------------------------------------
-if "config" not in st.session_state:
-    st.session_state.config = load_config()
-if "llm" not in st.session_state:
-    st.session_state.llm = None
-
-
 # ---------------------------------------------------------------------------
 # Sidebar — configuration & navigation
 # ---------------------------------------------------------------------------
@@ -209,15 +200,34 @@ with st.sidebar:
     )
 
     st.divider()
-    st.markdown("<div class='section-label'>Configuration</div>", unsafe_allow_html=True)
-
+    
+    # --- SECURE API KEY INPUT ---
+    st.markdown("<div class='section-label'>Authentication</div>", unsafe_allow_html=True)
+    api_key_input = st.text_input(
+        "Enter Google API Key", 
+        type="password", 
+        help="Get your free key at aistudio.google.com"
+    )
+    
+    # If the user hasn't entered a key, stop the app completely
+    if not api_key_input:
+        st.warning("Please enter your Google API Key to unlock AI features.")
+        st.stop()
+        
+    # Dynamically set the environment variable so LangChain and config.py pick it up
+    os.environ["GOOGLE_API_KEY"] = api_key_input
+    
+    st.success("API Key Loaded securely!")
+    st.divider()
+    
+    # Load config AFTER setting the API key
+    st.session_state.config = load_config()
     cfg = st.session_state.config
     errors = validate_config(cfg)
 
     if errors:
         for err in errors:
             st.error(f"⚠ {err}")
-        st.info("Edit your `.env` file and restart the app.")
     else:
         provider_badge = "badge-gold" if cfg.llm_provider == "anthropic" else "badge-blue"
         st.markdown(
@@ -226,20 +236,18 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
 
-        # Lazy-initialise the LLM once
-        if st.session_state.llm is None:
-            try:
-                st.session_state.llm = get_llm(cfg)
-                st.success("✓ LLM ready")
-            except Exception as exc:
-                st.error(f"LLM init failed: {exc}")
+        # Force re-initialize LLM with the new key provided by user
+        try:
+            st.session_state.llm = get_llm(cfg)
+            st.success("✓ LLM ready")
+        except Exception as exc:
+            st.error(f"LLM init failed: {exc}")
 
     st.divider()
     st.markdown(
         "<small style='color:var(--text-dim)'>Built with LangChain + Streamlit</small>",
         unsafe_allow_html=True,
     )
-
 
 # ---------------------------------------------------------------------------
 # Guard: no valid config → stop here
