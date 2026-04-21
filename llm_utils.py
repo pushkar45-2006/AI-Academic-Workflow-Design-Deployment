@@ -47,7 +47,7 @@ def get_llm(config: AppConfig) -> Optional[BaseChatModel]:
         
         try:
             return ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash", # Highly stable, fast model for document analysis
+                model="gemini-pro", # Changed to universal alias to prevent 404 NOT_FOUND
                 google_api_key=api_key,
                 temperature=0.3,
             )
